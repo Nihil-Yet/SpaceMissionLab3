@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Space Mission</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; border-bottom: 3px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+        .panel { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel h2 { margin: 0 0 1rem; font-size: 1.1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        
+        /* Список миссий */
+        .mission-list { max-height: 350px; overflow-y: auto; }
+        .mission-item { margin: 0.4rem 0; }
+        .mission-item label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.4rem; border-radius: 4px; }
+        .mission-item label:hover { background: #f1f5f9; }
+        .mission-item input[type="radio"] { margin: 0; }
+        .mission-meta { font-size: 0.8rem; color: #64748b; margin-left: 1.4rem; }
+        
+        /* Формы */
+        .form-row { display: flex; gap: 0.5rem; margin: 0.4rem 0; flex-wrap: wrap; }
+        .form-row label { font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
+        .form-row input, .form-row select { padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; }
+        .form-row input[type="number"] { width: 80px; }
+        .form-row input[type="text"] { min-width: 120px; }
+        
+        /* Кнопки */
+        .btn { padding: 0.4rem 0.9rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn:hover { background: #2563eb; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0; }
+        
+        /* Результат */
+        .result { background: #0f172a; color: #e2e8f0; padding: 0.8rem; border-radius: 6px; font-family: ui-monospace, monospace; white-space: pre-wrap; font-size: 0.9rem; margin: 0.8rem 0; min-height: 80px; }
+        .result-title { font-weight: 600; color: #60a5fa; margin-bottom: 0.4rem; }
+        
+        /* Секции методов */
+        .method-section { margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #3b82f6; border-radius: 0 4px 4px 0; }
+        .method-section h3 { margin: 0 0 0.5rem; font-size: 0.95rem; color: #334155; }
+        .method-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.3rem 0; flex-wrap: wrap; }
+        .method-row input { width: 70px; padding: 0.25rem 0.4rem; font-size: 0.85rem; }
+        
+        /* Переключатели типа при создании */
+        .type-switch { margin: 0.5rem 0; display: flex; gap: 1rem; }
+        .type-switch label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+        
+        /* Скрытые секции */
+        .hide { display: none; }
+        .show { display: block; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Space Mission Control</h1>
+    
+    <div class="layout">
+        <!-- ЛЕВАЯ: Список + Создание -->
+        <div class="panel">
+            <h2>📋 Миссии</h2>
+            <div class="mission-list">
+                <form method="get" action="/mission" id="listForm">
+                    <div th:each="m : ${missions}" class="mission-item">
+                        <label>
+                            <input type="radio" name="selectedId" th:value="${m.id}" 
+                                   th:checked="${selectedId != null and selectedId == m.id}"
+                                   onchange="document.getElementById('listForm').submit()">
+                            <span th:text="${m.name}">Mission</span>
+                        </label>
+                        <div class="mission-meta">
+                            <span th:text="${m.type}">ORBITAL</span> | 
+                            <span th:text="${m.budget}">0</span> млн$ | 
+                            <span th:text="${m.duration}">0</span> дн.
+                        </div>
+                    </div>
+                </form>
+                <div th:if="${#lists.isEmpty(missions)}" style="color:#94a3b8;text-align:center;padding:1.5rem">
+                    Нет миссий
+                </div>
+            </div>
+            
+            <h2 style="margin-top:1.5rem">➕ Создать</h2>
+            <form th:action="@{/mission/create}" method="post">
+                <div class="form-row">
+                    <label>Название <input type="text" name="name" placeholder="Name"></label>
+                    <label>Бюджет <input type="number" name="budget" placeholder="0"></label>
+                    <label>Дни <input type="number" name="duration" placeholder="0"></label>
+                </div>
+                
+                <div class="type-switch">
+                    <label><input type="radio" name="missionType" value="orbital" checked onchange="toggleCreate('orbital')"> 🛰️ Orbital</label>
+                    <label><input type="radio" name="missionType" value="planetary" onchange="toggleCreate('planetary')"> 🪐 Planetary</label>
+                </div>
+                
+                <!-- Orbital поля -->
+                <div id="create-orbital" class="show">
+                    <div class="form-row">
+                        <label>Высота <input type="number" step="0.1" name="currHeight" placeholder="500"></label>
+                        <label>Цель <input type="number" step="0.1" name="targetHeight" placeholder="500"></label>
+                        <label>Наклон <input type="number" step="0.1" name="inclination" placeholder="0"></label>
+                    </div>
+                    <div class="form-row">
+                        <label>Энергия
+                            <select name="energySource">
+                                <option th:each="e : ${energySources}" th:value="${e}" th:text="${e}"></option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Planetary поля -->
+                <div id="create-planetary" class="hide">
+                    <div class="form-row">
+                        <label>Планета <input type="text" name="planet" placeholder="Mars"></label>
+                        <label>Атмосфера <input type="number" min="0" max="255" name="atmoDensity" placeholder="0"></label>
+                    </div>
+                    <div class="form-row">
+                        <label>Посадка <input type="text" name="landingPointName" placeholder="Base"></label>
+                        <label>X <input type="number" name="landingPointX" placeholder="0"></label>
+                        <label>Y <input type="number" name="landingPointY" placeholder="0"></label>
+                        <label>R <input type="number" name="landingPointR" placeholder="0"></label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-green" style="margin-top:0.5rem">💾 Создать</button>
+            </form>
+        </div>
+        
+        <!-- ПРАВАЯ: Методы -->
+        <div class="panel">
+            <h2>🎮 Управление</h2>
+            
+            <div th:if="${selectedMission == null}" style="color:#94a3b8;text-align:center;padding:3rem">
+                Выберите миссию слева
+            </div>
+            
+            <div th:if="${selectedMission != null}">
+                <div class="result" th:if="${resultTitle}">
+                    <div class="result-title" th:text="${resultTitle}"></div>
+                    <div th:text="${resultOutput}"></div>
+                </div>
+                
+                <!-- Общие -->
+                <div class="method-section">
+                    <h3>📊 Инфо</h3>
+                    <div class="btn-group">
+                        <form th:action="@{/mission/get-info}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">📄 GetInfo</button></form>
+                        <form th:action="@{/mission/calc-risk}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">⚠️ CalcRisk</button></form>
+                        <form th:action="@{/mission/calc-fuel}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">⛽ CalcFuel</button></form>
+                    </div>
+                    <div class="method-row">
+                        <form th:action="@{/mission/extend}" method="post">
+                            <input type="hidden" name="selectedId" th:value="${selectedId}">
+                            <input type="number" name="extendDays" min="1" placeholder="дни">
+                            <button class="btn btn-sm">📅 Extend</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Orbital -->
+                <div class="method-section" th:if="${selectedMission.orbitalMission != null}">
+                    <h3>🛰️ Орбита</h3>
+                    <div class="method-row">
+                        <form th:action="@{/mission/change-orbit}" method="post">
+                            <input type="hidden" name="selectedId" th:value="${selectedId}">
+                            <input type="number" step="0.1" name="orbitDelta" placeholder="Δ км">
+                            <button class="btn btn-sm">🔄 ΔHeight</button>
+                        </form>
+                    </div>
+                    <div class="method-row">
+                        <form th:action="@{/mission/set-target}" method="post">
+                            <input type="hidden" name="selectedId" th:value="${selectedId}">
+                            <input type="number" step="0.1" name="newTargetHeight" placeholder="цель">
+                            <button class="btn btn-sm">🎯 Target</button>
+                        </form>
+                    </div>
+                    <form th:action="@{/mission/orbit-state}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">🛰️ State</button></form>
+                </div>
+                
+                <!-- Planetary -->
+                <div class="method-section" th:if="${selectedMission.planetaryMission != null}">
+                    <h3>🪐 Планета</h3>
+                    <div class="method-row">
+                        <form th:action="@{/mission/set-landing}" method="post">
+                            <input type="hidden" name="selectedId" th:value="${selectedId}">
+                            <input type="text" name="newLandingName" placeholder="Название" style="width:100px">
+                            <input type="number" name="newLandingX" placeholder="X" style="width:50px">
+                            <input type="number" name="newLandingY" placeholder="Y" style="width:50px">
+                            <input type="number" name="newLandingR" placeholder="R" style="width:50px">
+                            <button class="btn btn-sm">📍 Landing</button>
+                        </form>
+                    </div>
+                    <div class="btn-group">
+                        <form th:action="@{/mission/has-atmosphere}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">🌍 Atmo?</button></form>
+                        <form th:action="@{/mission/scientific-goal}" method="post"><input type="hidden" name="selectedId" th:value="${selectedId}"><button class="btn btn-sm">🔬 Goal</button></form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleCreate(type) {
+            document.getElementById('create-orbital').className = type === 'orbital' ? 'show' : 'hide';
+            document.getElementById('create-planetary').className = type === 'planetary' ? 'show' : 'hide';
+        }
+    </script>
+</body>
+</html>
