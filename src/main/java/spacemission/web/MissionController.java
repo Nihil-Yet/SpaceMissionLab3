@@ -31,6 +31,9 @@ public class MissionController {
         }
         
         Mission selected = selectedId != null ? missionService.findById(selectedId) : null;
+
+        MissionFormDto form = new MissionFormDto();
+        form.setMissionType("orbital");
         
         model.addAttribute("missions", vmList);
         model.addAttribute("selectedId", selectedId);
@@ -214,7 +217,7 @@ public class MissionController {
         if (name != null && !name.isBlank() && budget != null && planet != null && !planet.isBlank()) {
             boolean hasParams = f.getAtmoDensity() != null || f.getLandingPointName() != null;
             if (!hasParams) {
-                return new PlanetaryMission(name, budget, planet);  // ✅ Вызываем минимальный конструктор
+                return new PlanetaryMission(name, budget, planet); 
             }
         }
         // 🔹 Конструктор #2: полный
