@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Создать стартовую площадку</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; margin-bottom: 0.5rem; }
+        .breadcrumbs { color: #64748b; margin-bottom: 1.5rem; }
+        .breadcrumbs a { color: #3b82f6; text-decoration: none; }
+        .panel { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-row { margin: 0.8rem 0; }
+        .form-row label { display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #475569; }
+        .form-row input { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
+        .form-actions { margin-top: 1.5rem; display: flex; gap: 0.8rem; }
+        .btn { padding: 0.5rem 1.2rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        .btn:hover { background: #2563eb; }
+        .btn-outline { background: transparent; border: 1px solid #64748b; color: #64748b; }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Создать стартовую площадку</h1>
+    <nav class="breadcrumbs">
+        <a th:href="@{/missions}">📋 Миссии</a> → <span>Создание площадки</span>
+    </nav>
+    
+    <div class="panel">
+        <form th:action="@{/launch-sites/create}" method="post" th:object="${launchSite}">
+            <div class="form-row">
+                <label>Название *</label>
+                <input type="text" th:field="*{name}" placeholder="Baikonur" required>
+            </div>
+            <div class="form-row">
+                <label>Местоположение</label>
+                <input type="text" th:field="*{location}" placeholder="Кызылординская область">
+            </div>
+            <div class="form-row">
+                <label>Страна</label>
+                <input type="text" th:field="*{country}" placeholder="Казахстан">
+            </div>
+            <div class="form-actions">
+                <a th:href="@{/missions}" class="btn btn-outline">❌ Отмена</a>
+                <button type="submit" class="btn btn-green">💾 Создать</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

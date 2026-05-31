@@ -274,15 +274,26 @@ public class MissionController {
     }
     
     public static class MissionView {
-        private Long id; private String name; private MissionT type; private Integer budget; private Integer duration;
+        private Long id;
+        private String name;
+        private MissionT type;
+        private Integer budget;
+        private Integer duration;
+        private String launchSiteName;
+
         public MissionView(Mission m) { 
-            id = m.getId(); name = m.getName(); type = m.getMissionType(); 
-            budget = m.getBudget(); duration = m.getDuration(); 
+            id = m.getId();
+            name = m.getName();
+            type = m.getMissionType(); 
+            budget = m.getBudget();
+            duration = m.getDuration(); 
+            launchSiteName = m.getLaunchSite() != null ? m.getLaunchSite().getName() : null;
         }
         public Long getId() { return id; }
         public String getName() { return name; }
         public MissionT getType() { return type; }
         public Integer getBudget() { return budget; }
         public Integer getDuration() { return duration; }
+        public String getLaunchSiteName() { return launchSiteName; }
     }
 }

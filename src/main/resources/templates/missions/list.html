@@ -20,8 +20,10 @@
         .btn:hover { background: #2563eb; }
         .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
         .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+        .btn-outline { background: transparent; border: 1px solid #64748b; color: #64748b; }
+        .btn-outline:hover { background: #f1f5f9; }
         .empty-state { color: #94a3b8; text-align: center; padding: 2rem; }
-        .nav-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .nav-actions { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     </style>
 </head>
 <body>
@@ -37,6 +39,7 @@
                         <span th:text="${m.type}">ORBITAL</span> | 
                         <span th:text="${m.budget}">0</span> млн$ | 
                         <span th:text="${m.duration}">0</span> дн.
+                        <span th:if="${m.launchSiteName}"> | 📍 <span th:text="${m.launchSiteName}">Baikonur</span></span>
                     </div>
                     <div class="mission-actions">
                         <a th:href="@{/missions/{id}(id=${m.id})}" class="btn btn-sm">🔍 Details</a>
@@ -52,6 +55,7 @@
             <h2>Создание</h2>
             <div class="nav-actions">
                 <a th:href="@{/missions/create}" class="btn btn-green">➕ Создать миссию</a>
+                <a th:href="@{/launch-sites/create}" class="btn btn-outline">🚀 Создать площадку</a>
             </div>
         </div>
     </div>
