@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${missionView.name} + ' - Детали'">Mission Details</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; margin-bottom: 0.5rem; }
+        .breadcrumbs { color: #64748b; margin-bottom: 1.5rem; }
+        .breadcrumbs a { color: #3b82f6; text-decoration: none; }
+        .breadcrumbs a:hover { text-decoration: underline; }
+        .layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; }
+        .panel { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel h2 { margin: 0 0 1rem; font-size: 1.1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .mission-info p { margin: 0.4rem 0; font-size: 0.95rem; }
+        .mission-info strong { color: #475569; }
+        .result { background: #0f172a; color: #e2e8f0; padding: 0.8rem; border-radius: 6px; font-family: ui-monospace, monospace; white-space: pre-wrap; font-size: 0.9rem; margin: 0.8rem 0; min-height: 80px; }
+        .result-title { font-weight: 600; color: #60a5fa; margin-bottom: 0.4rem; }
+        .method-section { margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #3b82f6; border-radius: 0 4px 4px 0; }
+        .method-section h3 { margin: 0 0 0.5rem; font-size: 0.95rem; color: #334155; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0; }
+        .method-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.3rem 0; flex-wrap: wrap; }
+        .method-row input { width: 70px; padding: 0.25rem 0.4rem; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 4px; }
+        .btn { padding: 0.4rem 0.9rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .btn:hover { background: #2563eb; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .btn-outline { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; }
+        .btn-outline:hover { background: #eff6ff; }
+        form { display: inline; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${missionView.name}">🚀 Mission</h1>
+    <nav class="breadcrumbs">
+        <a th:href="@{/missions}">📋 Миссии</a> → <span>Детали</span>
+    </nav>
+    
+    <div class="layout">
+        <!-- Левая панель: информация о миссии -->
+        <div class="panel">
+            <h2>📊 Информация</h2>
+            <div class="mission-info">
+                <p><strong>Тип:</strong> <span th:text="${missionView.type}">ORBITAL</span></p>
+                <p><strong>Бюджет:</strong> <span th:text="${missionView.budget}">0</span> млн$</p>
+                <p><strong>Длительность:</strong> <span th:text="${missionView.duration}">0</span> дней</p>
+                <p th:if="${mission.launchSite}"><strong>Стартовая площадка:</strong> <span th:text="${mission.launchSite.name}">Baikonur</span></p>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a th:href="@{/missions}" class="btn btn-outline">← Назад</a>
+                <a th:href="@{/missions/{id}/edit(id=${missionView.id})}" class="btn" style="background:#f59e0b">✏️ Редактировать</a>
+            </div>
+        </div>
+        
+        <!-- Правая панель: методы управления -->
+        <div class="panel">
+            <h2>🎮 Управление</h2>
+            
+            <!-- Результат выполнения метода -->
+            <div class="result" th:if="${resultTitle}">
+                <div class="result-title" th:text="${resultTitle}"></div>
+                <div th:text="${resultOutput}"></div>
+            </div>
+            
+            <!-- Общие методы -->
+            <div class="method-section">
+                <h3>📊 Инфо</h3>
+                <div class="btn-group">
+                    <form th:action="@{/missions/{id}/get-info(id=${missionView.id})}" method="post">
+                        <button class="btn btn-sm">📄 GetInfo</button>
+                    </form>
+                    <form th:action="@{/missions/{id}/calc-risk(id=${missionView.id})}" method="post">
+                        <button class="btn btn-sm">⚠️ CalcRisk</button>
+                    </form>
+                    <form th:action="@{/missions/{id}/calc-fuel(id=${missionView.id})}" method="post">
+                        <button class="btn btn-sm">⛽ CalcFuel</button>
+                    </form>
+                </div>
+                <form th:action="@{/missions/{id}/extend(id=${missionView.id})}" method="post" style="display:flex;gap:0.3rem;align-items:center;">
+                    <input type="number" th:field="*{actionForm.extendDays}" min="1" placeholder="дни">
+                    <button class="btn btn-sm">📅 Extend</button>
+                </form>
+            </div>
+            
+            <!-- Orbital методы -->
+            <div th:if="${mission.missionType != null and mission.missionType == 1}">
+                <div class="method-section">
+                    <h3>🛰️ Орбита</h3>
+                    <!-- Изменение высоты (ChangeOrbit) -->
+                    <form th:action="@{/missions/{id}/change-orbit(id=${missionView.id})}" 
+                          method="post" 
+                          style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:4px;">
+                        <label style="font-size:0.85rem; color:#475569;">Δ высоты (км):</label>
+                        <input type="number" 
+                               step="0.1"
+                               name="orbitDelta"
+                               placeholder="+/- км"
+                               style="width:90px; padding:0.3rem 0.5rem; border:1px solid #cbd5e1; border-radius:4px;">
+                        <button type="submit" class="btn btn-sm" style="background:#8b5cf6;">🔄 ChangeOrbit</button>
+                    </form>
+                    <!-- Установка целевой высоты -->
+                    <form th:action="@{/missions/{id}/set-target(id=${missionView.id})}" 
+                          method="post"
+                          style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem;">
+                        <input type="number" step="0.1" name="newTargetHeight" placeholder="Цель (км)">
+                        <button class="btn btn-sm">🎯 SetTarget</button>
+                    </form>
+                    <!-- Состояние орбиты -->
+                    <form th:action="@{/missions/{id}/orbit-state(id=${missionView.id})}" method="post">
+                        <button class="btn btn-sm">🛰️ OrbitState</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Planetary методы -->
+            <div th:if="${mission.missionType != null and mission.missionType == 2}">
+                <div class="method-section">
+                    <h3>🪐 Планета</h3>
+                    <form th:action="@{/missions/{id}/set-landing(id=${missionView.id})}" method="post" style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;margin-bottom:0.3rem;">
+                        <input type="text" th:field="*{actionForm.newLandingName}" placeholder="Название" style="width:90px">
+                        <input type="number" th:field="*{actionForm.newLandingX}" placeholder="X" style="width:45px">
+                        <input type="number" th:field="*{actionForm.newLandingY}" placeholder="Y" style="width:45px">
+                        <input type="number" th:field="*{actionForm.newLandingR}" placeholder="R" style="width:45px">
+                        <button class="btn btn-sm">📍 Landing</button>
+                    </form>
+                    <div class="btn-group">
+                        <form th:action="@{/missions/{id}/has-atmosphere(id=${missionView.id})}" method="post">
+                            <button class="btn btn-sm">🌍 Atmo?</button>
+                        </form>
+                        <form th:action="@{/missions/{id}/scientific-goal(id=${missionView.id})}" method="post">
+                            <button class="btn btn-sm">🔬 Goal</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

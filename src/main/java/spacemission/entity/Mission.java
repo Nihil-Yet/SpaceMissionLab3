@@ -24,8 +24,9 @@ public abstract class Mission {
     @Column(name = "mission_type")
     private Integer missionType;
 
-    @OneToMany(mappedBy = "mission", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<MissionCrew> crewAssignments = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "launch_site_id", foreignKey = @ForeignKey(name = "fk_mission_launch_site"))
+    private LaunchSite launchSite;
 
     public Mission() {
         this.name = "None";

@@ -15,9 +15,11 @@ public class MissionFormDto {
     private Integer budget;
     private Integer duration;
     
-    // === Выбор типа: ТОЛЬКО String/Boolean для формы ===
-    private String missionType;  // "orbital" или "planetary" — для биндинга из HTML
-    // ❌ УБРАНО: private MissionT missionType; — enum не биндится из строки без конвертера
+    // === Выбор типа миссии (строка для биндинга из HTML) ===
+    private String missionType;  // "orbital" или "planetary"
+    
+    // === привязка к стартовой площадке ===
+    private Long launchSiteId;
     
     // === Orbital поля ===
     private Double currHeight;
@@ -27,7 +29,7 @@ public class MissionFormDto {
     
     // === Planetary поля ===
     private String planet;
-    private Integer atmoDensity;  // ✅ Integer, не Byte (0..255)
+    private Integer atmoDensity;
     private String landingPointName;
     private Integer landingPointX;
     private Integer landingPointY;
@@ -46,7 +48,7 @@ public class MissionFormDto {
     private String resultTitle;
     private String resultOutput;
     
-    // === Helpers: определяем тип по строке из формы ===
+    // === Helpers ===
     public boolean isOrbitalType() {
         return "orbital".equalsIgnoreCase(missionType);
     }

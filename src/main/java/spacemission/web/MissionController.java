@@ -1,6 +1,7 @@
 package spacemission.web;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -8,181 +9,195 @@ import spacemission.entity.*;
 import spacemission.service.MissionService;
 import spacemission.service.PlanetaryData;
 import spacemission.web.dto.MissionFormDto;
+import spacemission.repo.LaunchSiteRepo;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/mission")
+@RequestMapping("/missions")
 public class MissionController {
     
     private final MissionService missionService;
     private final PlanetaryData planetaryData;
+    private final LaunchSiteRepo launchSiteRepo;
     
-    // === ЕДИНСТВЕННАЯ СТРАНИЦА ===
+    // ==================== ГЛАВНАЯ: СПИСОК МИССИЙ ====================
     @GetMapping
-    public String page(@RequestParam(required = false) Long selectedId, 
-                   @RequestParam(required = false) String missionType,  // ← ДОБАВИТЬ параметр
-                   Model model) {
-        List<Mission> missions = missionService.findAll();
-        List<MissionView> vmList = new ArrayList<>();
-        for (Mission m : missions) {
-            vmList.add(new MissionView(m));
-        }
-
-        Mission selected = selectedId != null ? missionService.findById(selectedId) : null;
-
-        // ✅ Инициализируем форму: дефолт orbital, или то, что пришло из формы
-        MissionFormDto form = new MissionFormDto();
-        form.setMissionType(missionType != null ? missionType : "orbital");
+    public String listPage(Model model) {
+        List<MissionView> vmList = missionService.findAll().stream()
+            .map(MissionView::new)
+            .toList();
         model.addAttribute("missions", vmList);
-        model.addAttribute("selectedId", selectedId);
-        model.addAttribute("selectedMission", selected);
+        return "missions/list";
+    }
+    
+    // ==================== СТРАНИЦА ДЕТАЛЕЙ ====================
+    @GetMapping("/{id}")
+    public String detailsPage(@PathVariable Long id, Model model) {
+        Mission mission = missionService.findById(id);
+        if (mission == null) return "redirect:/missions";
+        
+        model.addAttribute("mission", mission);
+        model.addAttribute("missionView", new MissionView(mission));
+        model.addAttribute("actionForm", new MissionActionForm());
+        model.addAttribute("launchSites", launchSiteRepo.findAll());
+        
+        return "missions/details";
+    }
+    
+    // ==================== СТРАНИЦА СОЗДАНИЯ ====================
+    @GetMapping("/create")
+    public String createPage(@RequestParam(required = false) String type, Model model) {
+        MissionFormDto form = new MissionFormDto();
+        form.setMissionType(type != null ? type : "orbital");
+        
         model.addAttribute("form", form);
         model.addAttribute("energySources", EnergySource.values());
-        return "mission";
+        model.addAttribute("launchSites", launchSiteRepo.findAll());
+        return "missions/create";
     }
     
-    // === СОЗДАНИЕ ===
+    // ==================== СОЗДАНИЕ МИССИИ ====================
     @PostMapping("/create")
-    public String create(@ModelAttribute MissionFormDto f, Model model) {
-        boolean isOrbital = "orbital".equalsIgnoreCase(f.getMissionType());
-        Mission m = isOrbital ? createOrbital(f) : createPlanetary(f);
+    public String create(@ModelAttribute MissionFormDto f) {
+        Mission m = "orbital".equalsIgnoreCase(f.getMissionType()) 
+            ? createOrbital(f) 
+            : createPlanetary(f);
+        
+        // Привязка к стартовой площадке (если выбрана)
+        if (f.getLaunchSiteId() != null) {
+            launchSiteRepo.findById(f.getLaunchSiteId()).ifPresent(m::setLaunchSite);
+        }
+        
         missionService.save(m);
-        return "redirect:/mission?selectedId=" + m.getId();
+        return "redirect:/missions/" + m.getId();
     }
     
-    // === МЕТОДЫ: ИНФОРМАЦИЯ ===
-    @PostMapping("/get-info")
-    public String getInfo(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    // ==================== ДЕЙСТВИЯ НА СТРАНИЦЕ ДЕТАЛЕЙ ====================
+    
+    @PostMapping("/{id}/get-info")
+    public String getInfo(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
-            return new MethodResult("📄 GetInfo", m.getInfo());
+            return new ActionResult("📄 GetInfo", m.getInfo());
         }, model);
     }
     
-    @PostMapping("/calc-risk")
-    public String calcRisk(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/calc-risk")
+    public String calcRisk(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
-            return new MethodResult("⚠️ CalcRisk", "Риск: " + String.format("%.1f%%", m.calcRisk() * 100));
+            return new ActionResult("⚠️ CalcRisk", "Риск: " + String.format("%.1f%%", m.calcRisk() * 100));
         }, model);
     }
     
-    @PostMapping("/calc-fuel")
-    public String calcFuel(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/calc-fuel")
+    public String calcFuel(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
-            return new MethodResult("⛽ CalcFuel", "Расход: " + String.format("%.2f", m.calcFuelConsumption()) + " ед.");
+            return new ActionResult("⛽ CalcFuel", "Расход: " + String.format("%.2f", m.calcFuelConsumption()) + " ед.");
         }, model);
     }
     
-    // === МЕТОДЫ: ИЗМЕНЕНИЕ ===
-    @PostMapping("/extend")
-    public String extend(@RequestParam Long selectedId, @RequestParam Integer extendDays, Model model) {
-        return executeMethod(selectedId, m -> {
-            if (extendDays == null || extendDays <= 0) return null;
-            m.extendMission(extendDays);
+    @PostMapping("/{id}/extend")
+    public String extend(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(id, m -> {
+            if (form.getExtendDays() == null || form.getExtendDays() <= 0) return null;
+            m.extendMission(form.getExtendDays());
             missionService.save(m);
-            return new MethodResult("📅 ExtendMission", "Длительность: " + m.getDuration() + " дней");
+            return new ActionResult("📅 ExtendMission", "Длительность: " + m.getDuration() + " дней");
         }, model);
     }
     
-    @PostMapping("/change-orbit")
-    public String changeOrbit(@RequestParam Long selectedId, @RequestParam Double orbitDelta, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/change-orbit")
+    public String changeOrbit(@PathVariable Long id, @RequestParam Double orbitDelta, Model model) {
+        return executeAction(id, m -> {
             if (!(m instanceof OrbitalMission om) || orbitDelta == null) return null;
             om.setPlanetaryData(planetaryData);
             Double h = om.changeOrbit(orbitDelta);
             missionService.save(m);
-            return new MethodResult("🛰️ ChangeOrbit", "Высота: " + String.format("%.2f", h) + " км");
+            return new ActionResult("🛰️ ChangeOrbit", "Новая высота: " + String.format("%.2f", h) + " км");
         }, model);
     }
     
-    @PostMapping("/set-target")
-    public String setTarget(@RequestParam Long selectedId, @RequestParam Double newTargetHeight, Model model) {
-        return executeMethod(selectedId, m -> {
-            if (!(m instanceof OrbitalMission om) || newTargetHeight == null) return null;
-            om.setTargetHeight(newTargetHeight);
+    @PostMapping("/{id}/set-target")
+    public String setTarget(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(id, m -> {
+            if (!(m instanceof OrbitalMission om) || form.getNewTargetHeight() == null) return null;
+            om.setTargetHeight(form.getNewTargetHeight());
             missionService.save(m);
-            return new MethodResult("🎯 SetTarget", "Цель: " + newTargetHeight + " км");
+            return new ActionResult("🎯 SetTarget", "Цель: " + form.getNewTargetHeight() + " км");
         }, model);
     }
     
-    @PostMapping("/orbit-state")
-    public String orbitState(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/orbit-state")
+    public String orbitState(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (!(m instanceof OrbitalMission om)) return null;
             om.setPlanetaryData(planetaryData);
             OrbitState s = om.orbitState();
-            return new MethodResult("🛰️ OrbitState", 
+            return new ActionResult("🛰️ OrbitState", 
                 "Высота: " + s.getCurrHeight() + " км\nТип: " + s.getType() + 
                 "\nНаклон: " + s.getInclination() + "°\nПериод: " + String.format("%.1f", s.getPeriod()) + " мин");
         }, model);
     }
     
-    @PostMapping("/set-landing")
-    public String setLanding(@RequestParam Long selectedId,
-                            @RequestParam String newLandingName,
-                            @RequestParam(required = false) Integer newLandingX,
-                            @RequestParam(required = false) Integer newLandingY,
-                            @RequestParam(required = false) Integer newLandingR, Model model) {
-        return executeMethod(selectedId, m -> {
-            if (!(m instanceof PlanetaryMission pm) || newLandingName == null) return null;
+    @PostMapping("/{id}/set-landing")
+    public String setLanding(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(id, m -> {
+            if (!(m instanceof PlanetaryMission pm) || form.getNewLandingName() == null) return null;
             pm.setLandingPoint(new LandingPoint(
-                newLandingName,
-                newLandingX != null ? newLandingX.shortValue() : 0,
-                newLandingY != null ? newLandingY.shortValue() : 0,
-                newLandingR != null ? newLandingR.shortValue() : 0));
+                form.getNewLandingName(),
+                form.getNewLandingX() != null ? form.getNewLandingX().shortValue() : 0,
+                form.getNewLandingY() != null ? form.getNewLandingY().shortValue() : 0,
+                form.getNewLandingR() != null ? form.getNewLandingR().shortValue() : 0));
             missionService.save(m);
-            return new MethodResult("📍 SetLanding", "Точка: " + newLandingName);
+            return new ActionResult("📍 SetLanding", "Точка: " + form.getNewLandingName());
         }, model);
     }
     
-    @PostMapping("/has-atmosphere")
-    public String hasAtmosphere(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/has-atmosphere")
+    public String hasAtmosphere(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (!(m instanceof PlanetaryMission pm)) return null;
-            return new MethodResult("🌍 HasAtmosphere", pm.hasAtmosphere() ? "✅ Есть" : "❌ Нет");
+            return new ActionResult("🌍 HasAtmosphere", pm.hasAtmosphere() ? "✅ Есть" : "❌ Нет");
         }, model);
     }
     
-    @PostMapping("/scientific-goal")
-    public String scientificGoal(@RequestParam Long selectedId, Model model) {
-        return executeMethod(selectedId, m -> {
+    @PostMapping("/{id}/scientific-goal")
+    public String scientificGoal(@PathVariable Long id, Model model) {
+        return executeAction(id, m -> {
             if (!(m instanceof PlanetaryMission pm)) return null;
-            return new MethodResult("🔬 ScientificGoal", pm.scientificGoal());
+            return new ActionResult("🔬 ScientificGoal", pm.scientificGoal());
         }, model);
     }
     
-    // === ВСПОМОГАТЕЛЬНЫЕ ===
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     
-    private String executeMethod(Long selectedId, MethodExecutor executor, Model model) {
-        Mission m = missionService.findById(selectedId);
-        MethodResult result = (m != null) ? executor.execute(m) : null;
+    private String executeAction(Long id, ActionExecutor executor, Model model) {
+        Mission m = missionService.findById(id);
+        ActionResult result = (m != null) ? executor.execute(m) : null;
         
-        List<MissionView> vmList = new ArrayList<>();
-        for (Mission mission : missionService.findAll()) {
-            vmList.add(new MissionView(mission));
+        if (m != null) {
+            model.addAttribute("mission", m);
+            model.addAttribute("missionView", new MissionView(m));
         }
-        
-        model.addAttribute("missions", vmList);
-        model.addAttribute("selectedId", selectedId);
-        model.addAttribute("selectedMission", m);
-        model.addAttribute("form", new MissionFormDto());
-        model.addAttribute("energySources", EnergySource.values());
+        model.addAttribute("actionForm", new MissionActionForm());
+        model.addAttribute("launchSites", launchSiteRepo.findAll());
         
         if (result != null) {
             model.addAttribute("resultTitle", result.title);
             model.addAttribute("resultOutput", result.output);
         }
-        return "mission";
+        return "missions/details";
     }
 
     private Mission createOrbital(MissionFormDto f) {
         String name = f.getName();
         Integer budget = f.getBudget();
+        
         // 🔹 Конструктор #0: no-arg (если всё пустое)
         if ((name == null || name.isBlank()) && budget == null) {
             return new OrbitalMission();
@@ -195,6 +210,7 @@ public class MissionController {
                 return new OrbitalMission(name, budget);
             }
         }
+        // 🔹 Конструктор #2: полный
         return new OrbitalMission(
                 name != null && !name.isBlank() ? name : "Unnamed",
                 budget != null ? budget : 0,
@@ -210,6 +226,7 @@ public class MissionController {
         String name = f.getName();
         Integer budget = f.getBudget();
         String planet = f.getPlanet();
+        
         // 🔹 Конструктор #0: no-arg (если всё пустое)
         if ((name == null || name.isBlank()) && budget == null && (planet == null || planet.isBlank())) {
             return new PlanetaryMission();
@@ -235,16 +252,37 @@ public class MissionController {
                 f.getLandingPointR() != null ? f.getLandingPointR().shortValue() : 0));
     }
     
-    // === DTO для вида ===
-    public static class MissionView {
-        private Long id; private String name; private MissionT type; private Integer budget; private Integer duration;
-        public MissionView(Mission m) { id = m.getId(); name = m.getName(); type = m.getMissionType(); budget = m.getBudget(); duration = m.getDuration(); }
-        public Long getId() { return id; } public String getName() { return name; } public MissionT getType() { return type; }
-        public Integer getBudget() { return budget; } public Integer getDuration() { return duration; }
+    // ==================== DTO ====================
+    
+    @Data
+    public static class MissionActionForm {
+        private Integer extendDays;
+        private Double orbitDelta;
+        private Double newTargetHeight;
+        private String newLandingName;
+        private Integer newLandingX;
+        private Integer newLandingY;
+        private Integer newLandingR;
     }
     
     @FunctionalInterface
-    private interface MethodExecutor { MethodResult execute(Mission m); }
+    private interface ActionExecutor { ActionResult execute(Mission m); }
     
-    private static class MethodResult { String title, output; MethodResult(String t, String o) { title = t; output = o; } }
+    private static class ActionResult { 
+        String title, output; 
+        ActionResult(String t, String o) { title = t; output = o; } 
+    }
+    
+    public static class MissionView {
+        private Long id; private String name; private MissionT type; private Integer budget; private Integer duration;
+        public MissionView(Mission m) { 
+            id = m.getId(); name = m.getName(); type = m.getMissionType(); 
+            budget = m.getBudget(); duration = m.getDuration(); 
+        }
+        public Long getId() { return id; }
+        public String getName() { return name; }
+        public MissionT getType() { return type; }
+        public Integer getBudget() { return budget; }
+        public Integer getDuration() { return duration; }
+    }
 }

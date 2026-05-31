@@ -9,4 +9,5 @@ import java.util.List;
 public interface MissionRepo extends CrudRepository<Mission, Long> {
     List<Mission> findByMissionType(Integer type);
     List<Mission> findByNameContainingIgnoreCase(String keyword);
+    List<Mission> findByLaunchSiteId(Long launchSiteId);
 }

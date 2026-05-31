@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Space Mission - Список</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; border-bottom: 3px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+        .panel { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel h2 { margin: 0 0 1rem; font-size: 1.1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .mission-list { max-height: 400px; overflow-y: auto; }
+        .mission-item { margin: 0.5rem 0; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .mission-item:hover { background: #f8fafc; }
+        .mission-link { font-weight: 600; color: #1e40af; text-decoration: none; }
+        .mission-link:hover { text-decoration: underline; }
+        .mission-meta { font-size: 0.8rem; color: #64748b; margin: 0.3rem 0; }
+        .mission-actions { margin-top: 0.4rem; }
+        .btn { padding: 0.4rem 0.9rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #2563eb; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+        .empty-state { color: #94a3b8; text-align: center; padding: 2rem; }
+        .nav-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Space Mission Control</h1>
+    
+    <div class="layout">
+        <!-- Левая панель: список миссий -->
+        <div class="panel">
+            <h2>📋 Миссии</h2>
+            <div class="mission-list">
+                <div th:each="m : ${missions}" class="mission-item">
+                    <a th:href="@{/missions/{id}(id=${m.id})}" class="mission-link" th:text="${m.name}">Mission</a>
+                    <div class="mission-meta">
+                        <span th:text="${m.type}">ORBITAL</span> | 
+                        <span th:text="${m.budget}">0</span> млн$ | 
+                        <span th:text="${m.duration}">0</span> дн.
+                    </div>
+                    <div class="mission-actions">
+                        <a th:href="@{/missions/{id}(id=${m.id})}" class="btn btn-sm">🔍 Details</a>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(missions)}" class="empty-state">
+                    Нет миссий. <a th:href="@{/missions/create}">Создайте первую!</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Правая панель: навигация -->
+        <div class="panel">
+            <h2>🧭 Навигация</h2>
+            <p>Выберите миссию для просмотра деталей и управления.</p>
+            <div class="nav-actions">
+                <a th:href="@{/missions/create}" class="btn btn-green">➕ Создать миссию</a>
+            </div>
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
+            <h3>ℹ️ О приложении</h3>
+            <p style="font-size: 0.9rem; color: #64748b;">
+                Приложение для управления космическими миссиями.<br>
+                • Орбитальные и планетарные миссии<br>
+                • Расчёт риска и расхода топлива<br>
+                • Хранение в PostgreSQL через Hibernate
+            </p>
+        </div>
+    </div>
+</body>
+</html>
