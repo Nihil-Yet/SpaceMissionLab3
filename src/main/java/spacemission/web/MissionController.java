@@ -72,7 +72,7 @@ public class MissionController {
         }
         
         missionService.save(m);
-        return "redirect:/missions/" + m.getId();
+        return "redirect:/missions";
     }
     
     // ==================== ДЕЙСТВИЯ НА СТРАНИЦЕ ДЕТАЛЕЙ ====================
