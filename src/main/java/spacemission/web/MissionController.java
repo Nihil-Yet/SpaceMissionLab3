@@ -22,23 +22,24 @@ public class MissionController {
     
     // === ЕДИНСТВЕННАЯ СТРАНИЦА ===
     @GetMapping
-    public String page(@RequestParam(required = false) Long selectedId, Model model) {
+    public String page(@RequestParam(required = false) Long selectedId, 
+                   @RequestParam(required = false) String missionType,  // ← ДОБАВИТЬ параметр
+                   Model model) {
         List<Mission> missions = missionService.findAll();
         List<MissionView> vmList = new ArrayList<>();
-        
         for (Mission m : missions) {
             vmList.add(new MissionView(m));
         }
-        
+
         Mission selected = selectedId != null ? missionService.findById(selectedId) : null;
 
+        // ✅ Инициализируем форму: дефолт orbital, или то, что пришло из формы
         MissionFormDto form = new MissionFormDto();
-        form.setMissionType("orbital");
-        
+        form.setMissionType(missionType != null ? missionType : "orbital");
         model.addAttribute("missions", vmList);
         model.addAttribute("selectedId", selectedId);
         model.addAttribute("selectedMission", selected);
-        model.addAttribute("form", new MissionFormDto());
+        model.addAttribute("form", form);
         model.addAttribute("energySources", EnergySource.values());
         return "mission";
     }
