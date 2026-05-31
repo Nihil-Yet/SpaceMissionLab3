@@ -28,7 +28,6 @@
     <h1>🚀 Space Mission Control</h1>
     
     <div class="layout">
-        <!-- Левая панель: список миссий -->
         <div class="panel">
             <h2>📋 Миссии</h2>
             <div class="mission-list">
@@ -49,21 +48,11 @@
             </div>
         </div>
         
-        <!-- Правая панель: навигация -->
         <div class="panel">
-            <h2>🧭 Навигация</h2>
-            <p>Выберите миссию для просмотра деталей и управления.</p>
+            <h2>Создание</h2>
             <div class="nav-actions">
                 <a th:href="@{/missions/create}" class="btn btn-green">➕ Создать миссию</a>
             </div>
-            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
-            <h3>ℹ️ О приложении</h3>
-            <p style="font-size: 0.9rem; color: #64748b;">
-                Приложение для управления космическими миссиями.<br>
-                • Орбитальные и планетарные миссии<br>
-                • Расчёт риска и расхода топлива<br>
-                • Хранение в PostgreSQL через Hibernate
-            </p>
         </div>
     </div>
 </body>

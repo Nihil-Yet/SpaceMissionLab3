@@ -25,16 +25,10 @@
         .btn-outline { background: transparent; border: 1px solid #64748b; color: #64748b; }
         .btn-outline:hover { background: #f1f5f9; }
         .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
-        .hint { background: #f0f9ff; border-left: 3px solid #0ea5e9; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; color: #0c4a6e; border-radius: 0 4px 4px 0; }
-        .hint ul { margin: 0.4rem 0 0 1.2rem; padding: 0; }
-        .hint li { margin: 0.2rem 0; }
     </style>
-    <!-- 🔥 СКРИПТ ДЛЯ ПЕРЕКЛЮЧЕНИЯ ТИПА БЕЗ ОТПРАВКИ ФОРМЫ -->
     <script th:inline="javascript">
         function switchMissionType(type) {
-            // Получаем текущий URL без параметров
             const baseUrl = window.location.pathname;
-            // Переходим на тот же URL с новым параметром type
             window.location.href = baseUrl + '?type=' + type;
         }
     </script>
@@ -55,7 +49,6 @@
                 <label>Длительность (дни) <input type="number" th:field="*{duration}" placeholder="0"></label>
             </div>
             
-            <!-- Выбор стартовой площадки -->
             <div class="form-row">
                 <label>Стартовая площадка
                     <select th:field="*{launchSiteId}">
@@ -65,7 +58,6 @@
                 </label>
             </div>
             
-            <!-- 🔥 ИСПРАВЛЕНО: onchange вызывает JS-функцию, а не submit формы -->
             <div class="type-switch">
                 <label>
                     <input type="radio" th:field="*{missionType}" value="orbital"
@@ -81,7 +73,6 @@
                 </label>
             </div>
             
-            <!-- Orbital поля -->
             <div th:if="${form.missionType == 'orbital' or form.missionType == null}">
                 <div class="form-row">
                     <label>Текущая высота (км) <input type="number" step="0.1" th:field="*{currHeight}" placeholder="500"></label>
@@ -97,7 +88,6 @@
                 </div>
             </div>
             
-            <!-- Planetary поля -->
             <div th:if="${form.missionType == 'planetary'}">
                 <div class="form-row">
                     <label>Планета <input type="text" th:field="*{planet}" placeholder="Mars"></label>
@@ -109,15 +99,6 @@
                     <label>Y (широта) <input type="number" th:field="*{landingPointY}" placeholder="0"></label>
                     <label>R (радиус) <input type="number" th:field="*{landingPointR}" placeholder="0"></label>
                 </div>
-            </div>
-            
-            <div class="hint">
-                <strong>Логика конструкторов:</strong>
-                <ul>
-                    <li>Только <strong>Название + Бюджет</strong> → минимальный конструктор</li>
-                    <li><strong>Все параметры</strong> → полный конструктор</li>
-                    <li><strong>Ничего не заполнено</strong> → параметры по умолчанию</li>
-                </ul>
             </div>
             
             <div class="form-actions">
