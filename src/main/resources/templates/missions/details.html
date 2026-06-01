@@ -32,7 +32,9 @@
 <body>
     <h1 th:text="${missionView.name}">🚀 Mission</h1>
     <nav class="breadcrumbs">
-        <a th:href="@{/missions}">📋 Миссии</a> → <span>Детали</span>
+        <a th:href="@{/launch-sites}">📋 Площадки</a> → 
+        <a th:href="@{/launch-sites/{id}/missions(id=${launchSite.id})}" th:text="${launchSite.name}">Baikonur</a> → 
+        <span>Детали</span>
     </nav>
     
     <div class="layout">
@@ -45,7 +47,7 @@
                 <p th:if="${mission.launchSite}"><strong>Стартовая площадка:</strong> <span th:text="${mission.launchSite.name}">Baikonur</span></p>
             </div>
             <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <a th:href="@{/missions}" class="btn btn-outline">← Назад</a>
+                <a th:href="@{/launch-sites/{id}/missions(id=${launchSite.id})}" class="btn btn-outline">← Назад к списку</a>
             </div>
         </div>
         
@@ -60,82 +62,82 @@
             <div class="method-section">
                 <h3>📊 Инфо</h3>
                 <div class="btn-group">
-                    <form th:action="@{/missions/{id}/get-info(id=${missionView.id})}" method="post">
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/get-info(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
                         <button class="btn btn-sm">📄 GetInfo</button>
                     </form>
-                    <form th:action="@{/missions/{id}/calc-risk(id=${missionView.id})}" method="post">
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/calc-risk(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
                         <button class="btn btn-sm">⚠️ CalcRisk</button>
                     </form>
-                    <form th:action="@{/missions/{id}/calc-fuel(id=${missionView.id})}" method="post">
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/calc-fuel(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
                         <button class="btn btn-sm">⛽ CalcFuel</button>
                     </form>
                 </div>
-                <form th:action="@{/missions/{id}/extend(id=${missionView.id})}" method="post" style="display:flex;gap:0.3rem;align-items:center;">
+                <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/extend(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post" style="display:flex;gap:0.3rem;align-items:center;">
                     <input type="number" th:field="*{actionForm.extendDays}" min="1" placeholder="дни">
                     <button class="btn btn-sm">📅 Extend</button>
                 </form>
             </div>
             
             <!-- Orbital методы -->
-<div th:if="${missionView.type.name() == 'ORBITAL'}">
-    <div class="method-section">
-        <h3>🛰️ Орбита</h3>
-        
-        <!-- ChangeOrbit -->
-        <form th:action="@{/missions/{id}/change-orbit(id=${missionView.id})}" 
-              method="post" 
-              style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:4px;">
-            <label style="font-size:0.85rem; color:#475569;">Δ высоты (км):</label>
-            <input type="number" 
-                   step="0.1" 
-                   name="orbitDelta" 
-                   placeholder="+/- км" 
-                   style="width:90px; padding:0.3rem 0.5rem; border:1px solid #cbd5e1; border-radius:4px;">
-            <button type="submit" class="btn btn-sm" style="background:#8b5cf6;">🔄 ChangeOrbit</button>
-        </form>
-        
-        <!-- SetTarget -->
-        <form th:action="@{/missions/{id}/set-target(id=${missionView.id})}" 
-              method="post" 
-              style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem;">
-            <input type="number" step="0.1" name="newTargetHeight" placeholder="Цель (км)">
-            <button class="btn btn-sm">🎯 SetTarget</button>
-        </form>
-        
-        <!-- OrbitState -->
-        <form th:action="@{/missions/{id}/orbit-state(id=${missionView.id})}" method="post">
-            <button class="btn btn-sm">🛰️ OrbitState</button>
-        </form>
-    </div>
-</div>
+            <div th:if="${missionView.type.name() == 'ORBITAL'}">
+                <div class="method-section">
+                    <h3>🛰️ Орбита</h3>
+                    
+                    <!-- ChangeOrbit -->
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/change-orbit(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" 
+                          method="post" 
+                          style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem; padding:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:4px;">
+                        <label style="font-size:0.85rem; color:#475569;">Δ высоты (км):</label>
+                        <input type="number" 
+                               step="0.1" 
+                               name="orbitDelta" 
+                               placeholder="+/- км" 
+                               style="width:90px; padding:0.3rem 0.5rem; border:1px solid #cbd5e1; border-radius:4px;">
+                        <button type="submit" class="btn btn-sm" style="background:#8b5cf6;">🔄 ChangeOrbit</button>
+                    </form>
+                    
+                    <!-- SetTarget -->
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/set-target(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" 
+                          method="post" 
+                          style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.5rem;">
+                        <input type="number" step="0.1" name="newTargetHeight" placeholder="Цель (км)">
+                        <button class="btn btn-sm">🎯 SetTarget</button>
+                    </form>
+                    
+                    <!-- OrbitState -->
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/orbit-state(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
+                        <button class="btn btn-sm">🛰️ OrbitState</button>
+                    </form>
+                </div>
+            </div>
             
             <!-- Planetary методы -->
-<div th:if="${missionView.type.name() == 'PLANETARY'}">
-    <div class="method-section">
-        <h3>🪐 Планета</h3>
-        
-        <!-- SetLanding -->
-        <form th:action="@{/missions/{id}/set-landing(id=${missionView.id})}" 
-              method="post" 
-              style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;margin-bottom:0.3rem;">
-            <input type="text" th:field="*{actionForm.newLandingName}" placeholder="Название" style="width:90px">
-            <input type="number" th:field="*{actionForm.newLandingX}" placeholder="X" style="width:45px">
-            <input type="number" th:field="*{actionForm.newLandingY}" placeholder="Y" style="width:45px">
-            <input type="number" th:field="*{actionForm.newLandingR}" placeholder="R" style="width:45px">
-            <button class="btn btn-sm">📍 Landing</button>
-        </form>
-        
-        <!-- HasAtmosphere и ScientificGoal -->
-        <div class="btn-group">
-            <form th:action="@{/missions/{id}/has-atmosphere(id=${missionView.id})}" method="post">
-                <button class="btn btn-sm">🌍 Atmo?</button>
-            </form>
-            <form th:action="@{/missions/{id}/scientific-goal(id=${missionView.id})}" method="post">
-                <button class="btn btn-sm">🔬 Goal</button>
-            </form>
-        </div>
-    </div>
-</div>
+            <div th:if="${missionView.type.name() == 'PLANETARY'}">
+                <div class="method-section">
+                    <h3>🪐 Планета</h3>
+                    
+                    <!-- SetLanding -->
+                    <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/set-landing(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" 
+                          method="post" 
+                          style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;margin-bottom:0.3rem;">
+                        <input type="text" th:field="*{actionForm.newLandingName}" placeholder="Название" style="width:90px">
+                        <input type="number" th:field="*{actionForm.newLandingX}" placeholder="X" style="width:45px">
+                        <input type="number" th:field="*{actionForm.newLandingY}" placeholder="Y" style="width:45px">
+                        <input type="number" th:field="*{actionForm.newLandingR}" placeholder="R" style="width:45px">
+                        <button class="btn btn-sm">📍 Landing</button>
+                    </form>
+                    
+                    <!-- HasAtmosphere и ScientificGoal -->
+                    <div class="btn-group">
+                        <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/has-atmosphere(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
+                            <button class="btn btn-sm">🌍 Atmo?</button>
+                        </form>
+                        <form th:action="@{/launch-sites/{launchSiteId}/missions/{missionId}/scientific-goal(launchSiteId=${launchSite.id}, missionId=${missionView.id})}" method="post">
+                            <button class="btn btn-sm">🔬 Goal</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>

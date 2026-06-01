@@ -14,13 +14,13 @@ public class MissionService {
     private final MissionRepo missionRepo;
     private final PlanetaryData planetaryData;
 
-    public List<Mission> findAll() {
-        return StreamSupport.stream(missionRepo.findAll().spliterator(), false).toList();
-    }
-
-    public Mission findById(Long id) {
-        return missionRepo.findById(id).orElse(null);
-    }
+    // public List<Mission> findAll() {
+    //     return StreamSupport.stream(missionRepo.findAll().spliterator(), false).toList();
+    // }
+    //
+    // public Mission findById(Long id) {
+    //     return missionRepo.findById(id).orElse(null);
+    // }
 
     public Mission save(Mission mission) {
         if (mission instanceof OrbitalMission om) {
@@ -33,11 +33,7 @@ public class MissionService {
         missionRepo.deleteById(id);
     }
 
-    public List<Mission> findByType(Integer type) {
-        return missionRepo.findByMissionType(type);
-    }
-    
-    public List<Mission> findByLaunchSiteId(Long launchSiteId) {
-        return missionRepo.findByLaunchSiteId(launchSiteId);
-    }
+    // public List<Mission> findByType(Integer type) {
+    //     return missionRepo.findByMissionType(type);
+    // }
 }

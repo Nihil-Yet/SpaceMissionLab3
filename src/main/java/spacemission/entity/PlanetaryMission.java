@@ -1,14 +1,13 @@
 package spacemission.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 @Entity
 @Table(name = "planetary_missions")
-@Data
+@Getter @Setter
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class PlanetaryMission extends Mission {
     
     private String planet;

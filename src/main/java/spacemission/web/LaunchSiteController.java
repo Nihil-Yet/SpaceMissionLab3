@@ -10,7 +10,7 @@ import spacemission.service.MissionService;
 import spacemission.repo.LaunchSiteRepo;
 
 import java.util.List;
-import java.util.stream.StreamSupport;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,8 +22,9 @@ public class LaunchSiteController {
     
     @GetMapping
     public String listPage(Model model) {
-        List<LaunchSite> sites = StreamSupport.stream(
-            launchSiteRepo.findAll().spliterator(), false).toList();
+        Iterable<LaunchSite> sitesIterable = launchSiteRepo.findAll();
+        List<LaunchSite> sites = new java.util.ArrayList<>();
+        sitesIterable.forEach(sites::add);
         model.addAttribute("launchSites", sites);
         return "launch-sites/list";
     }
@@ -45,10 +46,11 @@ public class LaunchSiteController {
         LaunchSite site = launchSiteRepo.findById(id).orElse(null);
         if (site == null) return "redirect:/launch-sites";
         
-        List<Mission> missions = missionService.findByLaunchSiteId(id);
+        List<Mission> missions = new java.util.ArrayList<>(site.getMissions());
+        
         List<MissionController.MissionView> vmList = missions.stream()
             .map(MissionController.MissionView::new)
-            .toList();
+            .collect(Collectors.toList());
         
         model.addAttribute("launchSite", site);
         model.addAttribute("missions", vmList);

@@ -34,7 +34,6 @@
             if (launchSiteSelect && launchSiteSelect.value) {
                 url.searchParams.set('launchSiteId', launchSiteSelect.value);
             }
-            // Переходим по обновлённому URL
             window.location.href = url.toString();
         }
     </script>
@@ -42,13 +41,15 @@
 <body>
     <h1>➕ Создать миссию</h1>
     <nav class="breadcrumbs">
-        <a th:href="@{/launch-sites}">📋 Площадки</a> → <span>Создание миссии</span>
+        <a th:href="@{/launch-sites}">📋 Площадки</a> → 
+        <a th:href="@{/launch-sites/{id}/missions(id=${launchSite.id})}" th:text="${launchSite.name}">Baikonur</a> → 
+        <span>Создание миссии</span>
     </nav>
     
     <div class="panel">
         <h2>📝 Параметры миссии</h2>
         
-        <form th:action="@{/missions/create}" method="post" th:object="${form}">
+        <form th:action="@{/launch-sites/{launchSiteId}/missions/create(launchSiteId=${launchSite.id})}" method="post" th:object="${form}">
             
             <div class="form-row">
                 <label>Название <input type="text" th:field="*{name}" placeholder="Apollo 11"></label>
@@ -58,15 +59,10 @@
             
             <div class="form-row">
                 <label>Стартовая площадка
-                    <select th:field="*{launchSiteId}">
-                        <option value="">-- Не выбрана --</option>
-                        <option th:each="ls : ${launchSites}" 
-                                th:value="${ls.id}" 
-                                th:text="${ls.name + ' (' + ls.country + ')'}"
-                                th:selected="${form.launchSiteId != null and form.launchSiteId == ls.id}">
-                            Baikonur (KZ)
-                        </option>
+                    <select th:field="*{launchSiteId}" disabled>
+                        <option th:value="${launchSite.id}" th:text="${launchSite.name + ' (' + launchSite.country + ')'}" selected>Baikonur (KZ)</option>
                     </select>
+                    <input type="hidden" th:field="*{launchSiteId}" th:value="${launchSite.id}">
                 </label>
             </div>
             
@@ -112,7 +108,7 @@
             </div>
             
             <div class="form-actions">
-                <a th:href="@{/launch-sites}" class="btn btn-outline">❌ Отмена</a>
+                <a th:href="@{/launch-sites/{id}/missions(id=${launchSite.id})}" class="btn btn-outline">❌ Отмена</a>
                 <button type="submit" class="btn btn-green">💾 Создать миссию</button>
             </div>
         </form>

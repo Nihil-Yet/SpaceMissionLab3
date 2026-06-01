@@ -1,14 +1,15 @@
 package spacemission.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.*;
 
 @Entity
 @Table(name = "missions")
 @Inheritance(strategy = InheritanceType.JOINED)
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@ToString(exclude = "launchSite")
+@EqualsAndHashCode(exclude = "launchSite")
 public abstract class Mission {
     
     @Id
@@ -27,13 +28,6 @@ public abstract class Mission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "launch_site_id", foreignKey = @ForeignKey(name = "fk_mission_launch_site"))
     private LaunchSite launchSite;
-
-    public Mission() {
-        this.name = "None";
-        this.budget = 0;
-        this.duration = 0;
-        this.missionType = MissionT.UNKNOWN.ordinal();
-    }
 
     public Mission(String name, Integer budget, Integer duration) {
         this.name = name != null ? name : "None";

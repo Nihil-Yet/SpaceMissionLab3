@@ -38,7 +38,7 @@
                     </div>
                     <div style="margin-top: 0.4rem;">
                         <a th:href="@{/launch-sites/{id}/missions(id=${s.id})}" class="btn btn-sm">🔍 Миссии</a>
-                        <a th:href="@{/missions/create(launchSiteId=${s.id})}" class="btn btn-sm btn-green">➕ Миссию</a>
+                        <a th:href="@{/launch-sites/{siteId}/missions/create(siteId=${s.id})}" class="btn btn-sm btn-green">➕ Миссию</a>
                     </div>
                 </div>
                 <div th:if="${#lists.isEmpty(launchSites)}" class="empty-state">

@@ -39,14 +39,16 @@
             </p>
             <div class="mission-list">
                 <div th:each="m : ${missions}" class="mission-item">
-                    <a th:href="@{/missions/{id}(id=${m.id})}" class="mission-link" th:text="${m.name}">Mission</a>
+                    <a th:href="@{/launch-sites/{siteId}/missions/{missionId}(siteId=${launchSite.id}, missionId=${m.id})}" 
+                       class="mission-link" th:text="${m.name}">Mission</a>
                     <div class="mission-meta">
                         <span th:text="${m.type}">ORBITAL</span> | 
                         <span th:text="${m.budget}">0</span> млн$ | 
                         <span th:text="${m.duration}">0</span> дн.
                     </div>
                     <div style="margin-top: 0.4rem;">
-                        <a th:href="@{/missions/{id}(id=${m.id})}" class="btn btn-sm">🔍 Details</a>
+                        <a th:href="@{/launch-sites/{siteId}/missions/{missionId}(siteId=${launchSite.id}, missionId=${m.id})}" 
+                           class="btn btn-sm">🔍 Details</a>
                     </div>
                 </div>
                 <div th:if="${#lists.isEmpty(missions)}" class="empty-state">
@@ -58,7 +60,7 @@
         <div class="panel">
             <h2>Действия</h2>
             <div class="nav-actions">
-                <a th:href="@{/missions/create(launchSiteId=${launchSite.id})}" class="btn btn-green">➕ Создать миссию</a>
+                <a th:href="@{/launch-sites/{id}/missions/create(id=${launchSite.id})}" class="btn btn-green">➕ Создать миссию</a>
                 <a th:href="@{/launch-sites}" class="btn btn-outline">← Все площадки</a>
             </div>
         </div>

@@ -12,90 +12,131 @@ import spacemission.web.dto.MissionFormDto;
 import spacemission.repo.LaunchSiteRepo;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/missions")
+@RequestMapping("/launch-sites/{launchSiteId}/missions")
 public class MissionController {
     
     private final MissionService missionService;
     private final PlanetaryData planetaryData;
     private final LaunchSiteRepo launchSiteRepo;
     
-    @GetMapping
-    public String rootRedirect() {
-        return "redirect:/launch-sites";
-    }
-    
-    @GetMapping("/{id}")
-    public String detailsPage(@PathVariable Long id, Model model) {
-        Mission mission = missionService.findById(id);
-        if (mission == null) return "redirect:/launch-sites";
+    @GetMapping("/{missionId}")
+    public String detailsPage(@PathVariable Long launchSiteId, 
+                             @PathVariable Long missionId, 
+                             Model model) {
+        LaunchSite site = launchSiteRepo.findById(launchSiteId).orElse(null);
+        if (site == null) return "redirect:/launch-sites";
         
+        Mission mission = null;
+        for (Mission m : site.getMissions()) {
+            if (m.getId().equals(missionId)) {
+                mission = m;
+                break;
+            }
+        }
+        
+        if (mission == null) return "redirect:/launch-sites/" + launchSiteId + "/missions";
+        
+        model.addAttribute("launchSite", site);
         model.addAttribute("mission", mission);
         model.addAttribute("missionView", new MissionView(mission));
         model.addAttribute("actionForm", new MissionActionForm());
-        model.addAttribute("launchSites", launchSiteRepo.findAll());
         
         return "missions/details";
     }
     
     @GetMapping("/create")
-    public String createPage(@RequestParam(required = false) Long launchSiteId, 
+    public String createPage(@PathVariable Long launchSiteId,
                             @RequestParam(required = false) String type, 
                             Model model) {
+        LaunchSite site = launchSiteRepo.findById(launchSiteId).orElse(null);
+        if (site == null) return "redirect:/launch-sites";
+        
         MissionFormDto form = new MissionFormDto();
         form.setMissionType(type != null ? type : "orbital");
-        if (launchSiteId != null) form.setLaunchSiteId(launchSiteId);
+        form.setLaunchSiteId(launchSiteId);
         
+        model.addAttribute("launchSite", site);
         model.addAttribute("form", form);
         model.addAttribute("energySources", EnergySource.values());
-        model.addAttribute("launchSites", launchSiteRepo.findAll());
         return "missions/create";
     }
     
     @PostMapping("/create")
-    public String create(@ModelAttribute MissionFormDto f) {
+    public String create(@PathVariable Long launchSiteId, @ModelAttribute MissionFormDto f) {
         Mission m = "orbital".equalsIgnoreCase(f.getMissionType()) 
             ? createOrbital(f) 
             : createPlanetary(f);
         
-        if (f.getLaunchSiteId() != null) {
-            launchSiteRepo.findById(f.getLaunchSiteId()).ifPresent(m::setLaunchSite);
+        LaunchSite site = launchSiteRepo.findById(launchSiteId).orElse(null);
+        if (site != null) {
+            site.addMission(m);
+            missionService.save(m);
         }
         
-        missionService.save(m);
-        Long redirectSiteId = f.getLaunchSiteId() != null ? f.getLaunchSiteId() : 1L;
-        return "redirect:/launch-sites/" + redirectSiteId + "/missions";
+        return "redirect:/launch-sites/" + launchSiteId + "/missions";
     }
     
-    @PostMapping("/{id}/get-info")
-    public String getInfo(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    private String executeAction(Long launchSiteId, Long missionId, ActionExecutor executor, Model model) {
+        LaunchSite site = launchSiteRepo.findById(launchSiteId).orElse(null);
+        if (site == null) return "redirect:/launch-sites";
+        
+        Mission m = null;
+        for (Mission mission : site.getMissions()) {
+            if (mission.getId().equals(missionId)) {
+                m = mission;
+                break;
+            }
+        }
+        
+        if (m == null) return "redirect:/launch-sites/" + launchSiteId + "/missions";
+        
+        ActionResult result = executor.execute(m);
+        
+        model.addAttribute("launchSite", site);
+        model.addAttribute("mission", m);
+        model.addAttribute("missionView", new MissionView(m));
+        model.addAttribute("actionForm", new MissionActionForm());
+        
+        if (result != null) {
+            model.addAttribute("resultTitle", result.title);
+            model.addAttribute("resultOutput", result.output);
+        }
+        return "missions/details";
+    }
+
+    @PostMapping("/{missionId}/get-info")
+    public String getInfo(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
             return new ActionResult("📄 GetInfo", m.getInfo());
         }, model);
     }
     
-    @PostMapping("/{id}/calc-risk")
-    public String calcRisk(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/calc-risk")
+    public String calcRisk(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
             return new ActionResult("⚠️ CalcRisk", "Риск: " + String.format("%.1f%%", m.calcRisk() * 100));
         }, model);
     }
     
-    @PostMapping("/{id}/calc-fuel")
-    public String calcFuel(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/calc-fuel")
+    public String calcFuel(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (m instanceof OrbitalMission om) om.setPlanetaryData(planetaryData);
             return new ActionResult("⛽ CalcFuel", "Расход: " + String.format("%.2f", m.calcFuelConsumption()) + " ед.");
         }, model);
     }
     
-    @PostMapping("/{id}/extend")
-    public String extend(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/extend")
+    public String extend(@PathVariable Long launchSiteId, @PathVariable Long missionId, 
+                        @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (form.getExtendDays() == null || form.getExtendDays() <= 0) return null;
             m.extendMission(form.getExtendDays());
             missionService.save(m);
@@ -103,9 +144,10 @@ public class MissionController {
         }, model);
     }
     
-    @PostMapping("/{id}/change-orbit")
-    public String changeOrbit(@PathVariable Long id, @RequestParam Double orbitDelta, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/change-orbit")
+    public String changeOrbit(@PathVariable Long launchSiteId, @PathVariable Long missionId, 
+                             @RequestParam Double orbitDelta, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof OrbitalMission om) || orbitDelta == null) return null;
             om.setPlanetaryData(planetaryData);
             Double h = om.changeOrbit(orbitDelta);
@@ -114,9 +156,10 @@ public class MissionController {
         }, model);
     }
     
-    @PostMapping("/{id}/set-target")
-    public String setTarget(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/set-target")
+    public String setTarget(@PathVariable Long launchSiteId, @PathVariable Long missionId, 
+                           @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof OrbitalMission om) || form.getNewTargetHeight() == null) return null;
             om.setTargetHeight(form.getNewTargetHeight());
             missionService.save(m);
@@ -124,9 +167,9 @@ public class MissionController {
         }, model);
     }
     
-    @PostMapping("/{id}/orbit-state")
-    public String orbitState(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/orbit-state")
+    public String orbitState(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof OrbitalMission om)) return null;
             om.setPlanetaryData(planetaryData);
             OrbitState s = om.orbitState();
@@ -136,9 +179,10 @@ public class MissionController {
         }, model);
     }
     
-    @PostMapping("/{id}/set-landing")
-    public String setLanding(@PathVariable Long id, @ModelAttribute MissionActionForm form, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/set-landing")
+    public String setLanding(@PathVariable Long launchSiteId, @PathVariable Long missionId, 
+                            @ModelAttribute MissionActionForm form, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof PlanetaryMission pm) || form.getNewLandingName() == null) return null;
             pm.setLandingPoint(new LandingPoint(
                 form.getNewLandingName(),
@@ -150,38 +194,20 @@ public class MissionController {
         }, model);
     }
     
-    @PostMapping("/{id}/has-atmosphere")
-    public String hasAtmosphere(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/has-atmosphere")
+    public String hasAtmosphere(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof PlanetaryMission pm)) return null;
             return new ActionResult("🌍 HasAtmosphere", pm.hasAtmosphere() ? "✅ Есть" : "❌ Нет");
         }, model);
     }
     
-    @PostMapping("/{id}/scientific-goal")
-    public String scientificGoal(@PathVariable Long id, Model model) {
-        return executeAction(id, m -> {
+    @PostMapping("/{missionId}/scientific-goal")
+    public String scientificGoal(@PathVariable Long launchSiteId, @PathVariable Long missionId, Model model) {
+        return executeAction(launchSiteId, missionId, m -> {
             if (!(m instanceof PlanetaryMission pm)) return null;
             return new ActionResult("🔬 ScientificGoal", pm.scientificGoal());
         }, model);
-    }
-    
-    private String executeAction(Long id, ActionExecutor executor, Model model) {
-        Mission m = missionService.findById(id);
-        ActionResult result = (m != null) ? executor.execute(m) : null;
-        
-        if (m != null) {
-            model.addAttribute("mission", m);
-            model.addAttribute("missionView", new MissionView(m));
-        }
-        model.addAttribute("actionForm", new MissionActionForm());
-        model.addAttribute("launchSites", launchSiteRepo.findAll());
-        
-        if (result != null) {
-            model.addAttribute("resultTitle", result.title);
-            model.addAttribute("resultOutput", result.output);
-        }
-        return "missions/details";
     }
 
     private Mission createOrbital(MissionFormDto f) {
