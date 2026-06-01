@@ -36,11 +36,12 @@
 <body>
     <h1>➕ Создать миссию</h1>
     <nav class="breadcrumbs">
-        <a th:href="@{/missions}">📋 Миссии</a> → <span>Создание</span>
+        <a th:href="@{/launch-sites}">📋 Площадки</a> → <span>Создание миссии</span>
     </nav>
     
     <div class="panel">
         <h2>📝 Параметры миссии</h2>
+        
         <form th:action="@{/missions/create}" method="post" th:object="${form}">
             
             <div class="form-row">
@@ -53,7 +54,12 @@
                 <label>Стартовая площадка
                     <select th:field="*{launchSiteId}">
                         <option value="">-- Не выбрана --</option>
-                        <option th:each="ls : ${launchSites}" th:value="${ls.id}" th:text="${ls.name + ' (' + ls.country + ')'}">Baikonur (KZ)</option>
+                        <option th:each="ls : ${launchSites}" 
+                                th:value="${ls.id}" 
+                                th:text="${ls.name + ' (' + ls.country + ')'}"
+                                th:selected="${form.launchSiteId != null and form.launchSiteId == ls.id}">
+                            Baikonur (KZ)
+                        </option>
                     </select>
                 </label>
             </div>
@@ -61,13 +67,11 @@
             <div class="type-switch">
                 <label>
                     <input type="radio" th:field="*{missionType}" value="orbital"
-                           th:checked="${form.missionType == 'orbital'}"
                            onchange="switchMissionType('orbital')"> 
                     🛰️ Orbital
                 </label>
                 <label>
                     <input type="radio" th:field="*{missionType}" value="planetary"
-                           th:checked="${form.missionType == 'planetary'}"
                            onchange="switchMissionType('planetary')"> 
                     🪐 Planetary
                 </label>
@@ -102,7 +106,7 @@
             </div>
             
             <div class="form-actions">
-                <a th:href="@{/missions}" class="btn btn-outline">❌ Отмена</a>
+                <a th:href="@{/launch-sites}" class="btn btn-outline">❌ Отмена</a>
                 <button type="submit" class="btn btn-green">💾 Создать миссию</button>
             </div>
         </form>

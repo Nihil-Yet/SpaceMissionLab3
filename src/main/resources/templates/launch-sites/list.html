@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>🚀 Стартовые площадки</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; border-bottom: 3px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+        .panel { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel h2 { margin: 0 0 1rem; font-size: 1.1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .site-list { max-height: 400px; overflow-y: auto; }
+        .site-item { margin: 0.5rem 0; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .site-item:hover { background: #f8fafc; }
+        .site-link { font-weight: 600; color: #1e40af; text-decoration: none; }
+        .site-link:hover { text-decoration: underline; }
+        .site-meta { font-size: 0.8rem; color: #64748b; margin: 0.3rem 0; }
+        .btn { padding: 0.4rem 0.9rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #2563eb; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+        .empty-state { color: #94a3b8; text-align: center; padding: 2rem; }
+        .nav-actions { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Стартовые площадки</h1>
+    
+    <div class="layout">
+        <div class="panel">
+            <h2>📋 Площадки</h2>
+            <div class="site-list">
+                <div th:each="s : ${launchSites}" class="site-item">
+                    <a th:href="@{/launch-sites/{id}/missions(id=${s.id})}" class="site-link" th:text="${s.name}">Baikonur</a>
+                    <div class="site-meta">
+                        <span th:text="${s.location}">Кызылординская область</span>, 
+                        <span th:text="${s.country}">Казахстан</span>
+                    </div>
+                    <div style="margin-top: 0.4rem;">
+                        <a th:href="@{/launch-sites/{id}/missions(id=${s.id})}" class="btn btn-sm">🔍 Миссии</a>
+                        <a th:href="@{/missions/create(launchSiteId=${s.id})}" class="btn btn-sm btn-green">➕ Миссию</a>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(launchSites)}" class="empty-state">
+                    Нет площадок. <a th:href="@{/launch-sites/create}">Создайте первую!</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>Навигация</h2>
+            <div class="nav-actions">
+                <a th:href="@{/launch-sites/create}" class="btn btn-green">🚀 Создать площадку</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

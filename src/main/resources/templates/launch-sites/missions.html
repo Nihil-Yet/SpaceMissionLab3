@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${launchSite.name} + ' - Миссии'">Миссии площадки</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+        h1 { color: #1e3a5f; margin-bottom: 0.5rem; }
+        .breadcrumbs { color: #64748b; margin-bottom: 1.5rem; }
+        .breadcrumbs a { color: #3b82f6; text-decoration: none; }
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+        .panel { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel h2 { margin: 0 0 1rem; font-size: 1.1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .mission-list { max-height: 400px; overflow-y: auto; }
+        .mission-item { margin: 0.5rem 0; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .mission-link { font-weight: 600; color: #1e40af; text-decoration: none; }
+        .mission-meta { font-size: 0.8rem; color: #64748b; margin: 0.3rem 0; }
+        .btn { padding: 0.4rem 0.9rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #2563eb; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .btn-green { background: #22c55e; } .btn-green:hover { background: #16a34a; }
+        .btn-outline { background: transparent; border: 1px solid #64748b; color: #64748b; }
+        .empty-state { color: #94a3b8; text-align: center; padding: 2rem; }
+        .nav-actions { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${launchSite.name}">🚀 Площадка</h1>
+    <nav class="breadcrumbs">
+        <a th:href="@{/launch-sites}">📋 Площадки</a> → <span>Миссии</span>
+    </nav>
+    
+    <div class="layout">
+        <div class="panel">
+            <h2>📋 Миссии площадки</h2>
+            <p style="color:#64748b;font-size:0.9rem;margin-bottom:1rem;">
+                <span th:text="${launchSite.location}">Location</span>, 
+                <span th:text="${launchSite.country}">Country</span>
+            </p>
+            <div class="mission-list">
+                <div th:each="m : ${missions}" class="mission-item">
+                    <a th:href="@{/missions/{id}(id=${m.id})}" class="mission-link" th:text="${m.name}">Mission</a>
+                    <div class="mission-meta">
+                        <span th:text="${m.type}">ORBITAL</span> | 
+                        <span th:text="${m.budget}">0</span> млн$ | 
+                        <span th:text="${m.duration}">0</span> дн.
+                    </div>
+                    <div style="margin-top: 0.4rem;">
+                        <a th:href="@{/missions/{id}(id=${m.id})}" class="btn btn-sm">🔍 Details</a>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(missions)}" class="empty-state">
+                    Нет миссий на этой площадке.
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>Действия</h2>
+            <div class="nav-actions">
+                <a th:href="@{/missions/create(launchSiteId=${launchSite.id})}" class="btn btn-green">➕ Создать миссию</a>
+                <a th:href="@{/launch-sites}" class="btn btn-outline">← Все площадки</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

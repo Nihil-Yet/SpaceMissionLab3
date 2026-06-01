@@ -1,7 +1,7 @@
 package spacemission.web;
 
-import lombok.RequiredArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +12,6 @@ import spacemission.web.dto.MissionFormDto;
 import spacemission.repo.LaunchSiteRepo;
 
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,21 +22,15 @@ public class MissionController {
     private final PlanetaryData planetaryData;
     private final LaunchSiteRepo launchSiteRepo;
     
-    // ==================== ГЛАВНАЯ: СПИСОК МИССИЙ ====================
     @GetMapping
-    public String listPage(Model model) {
-        List<MissionView> vmList = missionService.findAll().stream()
-            .map(MissionView::new)
-            .toList();
-        model.addAttribute("missions", vmList);
-        return "missions/list";
+    public String rootRedirect() {
+        return "redirect:/launch-sites";
     }
     
-    // ==================== СТРАНИЦА ДЕТАЛЕЙ ====================
     @GetMapping("/{id}")
     public String detailsPage(@PathVariable Long id, Model model) {
         Mission mission = missionService.findById(id);
-        if (mission == null) return "redirect:/missions";
+        if (mission == null) return "redirect:/launch-sites";
         
         model.addAttribute("mission", mission);
         model.addAttribute("missionView", new MissionView(mission));
@@ -47,11 +40,13 @@ public class MissionController {
         return "missions/details";
     }
     
-    // ==================== СТРАНИЦА СОЗДАНИЯ ====================
     @GetMapping("/create")
-    public String createPage(@RequestParam(required = false) String type, Model model) {
+    public String createPage(@RequestParam(required = false) Long launchSiteId, 
+                            @RequestParam(required = false) String type, 
+                            Model model) {
         MissionFormDto form = new MissionFormDto();
         form.setMissionType(type != null ? type : "orbital");
+        if (launchSiteId != null) form.setLaunchSiteId(launchSiteId);
         
         model.addAttribute("form", form);
         model.addAttribute("energySources", EnergySource.values());
@@ -59,23 +54,20 @@ public class MissionController {
         return "missions/create";
     }
     
-    // ==================== СОЗДАНИЕ МИССИИ ====================
     @PostMapping("/create")
     public String create(@ModelAttribute MissionFormDto f) {
         Mission m = "orbital".equalsIgnoreCase(f.getMissionType()) 
             ? createOrbital(f) 
             : createPlanetary(f);
         
-        // Привязка к стартовой площадке (если выбрана)
         if (f.getLaunchSiteId() != null) {
             launchSiteRepo.findById(f.getLaunchSiteId()).ifPresent(m::setLaunchSite);
         }
         
         missionService.save(m);
-        return "redirect:/missions";
+        Long redirectSiteId = f.getLaunchSiteId() != null ? f.getLaunchSiteId() : 1L;
+        return "redirect:/launch-sites/" + redirectSiteId + "/missions";
     }
-    
-    // ==================== ДЕЙСТВИЯ НА СТРАНИЦЕ ДЕТАЛЕЙ ====================
     
     @PostMapping("/{id}/get-info")
     public String getInfo(@PathVariable Long id, Model model) {
@@ -174,8 +166,6 @@ public class MissionController {
         }, model);
     }
     
-    // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-    
     private String executeAction(Long id, ActionExecutor executor, Model model) {
         Mission m = missionService.findById(id);
         ActionResult result = (m != null) ? executor.execute(m) : null;
@@ -198,11 +188,9 @@ public class MissionController {
         String name = f.getName();
         Integer budget = f.getBudget();
         
-        // 🔹 Конструктор #0: no-arg (если всё пустое)
         if ((name == null || name.isBlank()) && budget == null) {
             return new OrbitalMission();
         }
-        // 🔹 Конструктор #1: минимальный (name + budget)
         if (name != null && !name.isBlank() && budget != null) {
             boolean hasParams = f.getCurrHeight() != null || f.getTargetHeight() != null || 
                 f.getInclination() != null || f.getEnergySource() != null;
@@ -210,7 +198,6 @@ public class MissionController {
                 return new OrbitalMission(name, budget);
             }
         }
-        // 🔹 Конструктор #2: полный
         return new OrbitalMission(
                 name != null && !name.isBlank() ? name : "Unnamed",
                 budget != null ? budget : 0,
@@ -227,18 +214,15 @@ public class MissionController {
         Integer budget = f.getBudget();
         String planet = f.getPlanet();
         
-        // 🔹 Конструктор #0: no-arg (если всё пустое)
         if ((name == null || name.isBlank()) && budget == null && (planet == null || planet.isBlank())) {
             return new PlanetaryMission();
         }
-        // 🔹 Конструктор #1: минимальный (name + budget + planet)
         if (name != null && !name.isBlank() && budget != null && planet != null && !planet.isBlank()) {
             boolean hasParams = f.getAtmoDensity() != null || f.getLandingPointName() != null;
             if (!hasParams) {
                 return new PlanetaryMission(name, budget, planet); 
             }
         }
-        // 🔹 Конструктор #2: полный
         return new PlanetaryMission(
             name != null && !name.isBlank() ? name : "Unnamed",
             budget != null ? budget : 0,
@@ -251,8 +235,6 @@ public class MissionController {
                 f.getLandingPointY() != null ? f.getLandingPointY().shortValue() : 0,
                 f.getLandingPointR() != null ? f.getLandingPointR().shortValue() : 0));
     }
-    
-    // ==================== DTO ====================
     
     @Data
     public static class MissionActionForm {

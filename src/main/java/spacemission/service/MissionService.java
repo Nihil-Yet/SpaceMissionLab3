@@ -36,4 +36,8 @@ public class MissionService {
     public List<Mission> findByType(Integer type) {
         return missionRepo.findByMissionType(type);
     }
+    
+    public List<Mission> findByLaunchSiteId(Long launchSiteId) {
+        return missionRepo.findByLaunchSiteId(launchSiteId);
+    }
 }

@@ -5,7 +5,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import spacemission.entity.LaunchSite;
+import spacemission.entity.Mission;
+import spacemission.service.MissionService;
 import spacemission.repo.LaunchSiteRepo;
+
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 @Controller
 @RequiredArgsConstructor
@@ -13,6 +18,15 @@ import spacemission.repo.LaunchSiteRepo;
 public class LaunchSiteController {
     
     private final LaunchSiteRepo launchSiteRepo;
+    private final MissionService missionService;
+    
+    @GetMapping
+    public String listPage(Model model) {
+        List<LaunchSite> sites = StreamSupport.stream(
+            launchSiteRepo.findAll().spliterator(), false).toList();
+        model.addAttribute("launchSites", sites);
+        return "launch-sites/list";
+    }
     
     @GetMapping("/create")
     public String createPage(Model model) {
@@ -23,6 +37,21 @@ public class LaunchSiteController {
     @PostMapping("/create")
     public String create(@ModelAttribute LaunchSite ls) {
         launchSiteRepo.save(ls);
-        return "redirect:/missions";
+        return "redirect:/launch-sites";
+    }
+    
+    @GetMapping("/{id}/missions")
+    public String missionsBySite(@PathVariable Long id, Model model) {
+        LaunchSite site = launchSiteRepo.findById(id).orElse(null);
+        if (site == null) return "redirect:/launch-sites";
+        
+        List<Mission> missions = missionService.findByLaunchSiteId(id);
+        List<MissionController.MissionView> vmList = missions.stream()
+            .map(MissionController.MissionView::new)
+            .toList();
+        
+        model.addAttribute("launchSite", site);
+        model.addAttribute("missions", vmList);
+        return "launch-sites/missions";
     }
 }
