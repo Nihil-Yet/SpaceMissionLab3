@@ -28,8 +28,14 @@
     </style>
     <script th:inline="javascript">
         function switchMissionType(type) {
-            const baseUrl = window.location.pathname;
-            window.location.href = baseUrl + '?type=' + type;
+            const url = new URL(window.location.href);
+            url.searchParams.set('type', type);
+            const launchSiteSelect = document.querySelector('select[name="launchSiteId"]');
+            if (launchSiteSelect && launchSiteSelect.value) {
+                url.searchParams.set('launchSiteId', launchSiteSelect.value);
+            }
+            // Переходим по обновлённому URL
+            window.location.href = url.toString();
         }
     </script>
 </head>
